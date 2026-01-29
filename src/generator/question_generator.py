@@ -35,7 +35,7 @@ class QuestionGenerator:
         try:
             question = self._retry_and_generate(self.mcq_llm,mcq_prompt_template,topic,difficulty)
 
-            if len(question.options) != 4 or question.correct_option not in question.options:
+            if len(question.options) != 4 or question.correct_answer not in question.options:
                 raise CustomException("Invalid MCQ format received from LLM")
 
             self.logger.info("Generated MCQ question successfully")
@@ -46,15 +46,20 @@ class QuestionGenerator:
             raise CustomException("Error generating MCQ question", e)
 
     def generate_fill_blank(self, topic: str, difficulty: str = "medium") -> FillBlankQuestion:
-        try:
-            question = self._retry_and_generate(self.fill_blank_llm,fill_blank_prompt_template,topic,difficulty)
+        for attempt in range(settings.MAX_RETRIES):
+            try:
+                self.logger.info(f"Generating fill-blank question, attempt: {attempt + 1}")
+                
+                prompt = fill_blank_prompt_template.format(topic=topic, difficulty=difficulty)
+                question = self.fill_blank_llm.invoke(prompt)
 
-            if "_____" not in question.question_text or not question.correct_answer:
-                raise CustomException("Invalid Fill-in-the-Blank format received from LLM")
-
-            self.logger.info("Generated Fill-in-the-Blank question successfully")
-            return question
-
-        except Exception as e:
-            self.logger.error(f"Error generating Fill-in-the-Blank question: {str(e)}")
-            raise CustomException("Error generating Fill-in-the-Blank question", e)
+                if question and question.question and question.answer and "_____" in question.question:
+                    self.logger.info("Generated Fill-in-the-Blank question successfully")
+                    return question
+                else:
+                    self.logger.warning(f"Invalid format on attempt {attempt + 1}, retrying...")
+                    
+            except Exception as e:
+                self.logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
+                
+        raise CustomException("Error generating Fill-in-the-Blank question", None)

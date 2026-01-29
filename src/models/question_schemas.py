@@ -1,24 +1,12 @@
 from typing import List
-from pydantic import BaseModel, Field ,validator
+from pydantic import BaseModel, Field
 
 class MCQQuestion(BaseModel):
-    question:str=Field(description="The Question text")
-    options:List[str]=Field(description="List of options for the MCQ")
-    correct_option:int=Field(description="The correct option in the options list")
-    
-    @validator('question',pre=True)
-    def clean_question(cls,v):
-        if isinstance(v,str):
-            return v.get('description',str(v))
-        return str(v)
-        
-        
+    question: str = Field(description="The Question text")
+    options: List[str] = Field(description="List of exactly 4 options for the MCQ")
+    correct_answer: str = Field(description="The correct answer from the options")
+
+
 class FillBlankQuestion(BaseModel):
-    question:str=Field(description="The Question text with '____' for the blank")
-    answer:str=Field(description="The correct answer to fill in the blank")
-    
-    @validator('question',pre=True)
-    def clean_question(cls,v):
-        if isinstance(v,str):
-            return v.get('description',str(v))
-        return str(v)
+    question: str = Field(description="The Question text with '_____' for the blank")
+    answer: str = Field(description="The correct answer to fill in the blank")

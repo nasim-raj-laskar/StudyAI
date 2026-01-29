@@ -27,7 +27,7 @@ class QuizManager:
                         'type':'MCQ',
                         'question':question.question,
                         'options':question.options,
-                        'correct_answer':question.correct_option
+                        'correct_answer':question.correct_answer
                     })
                 else:
                     question=generator.generate_fill_blank(topic, difficulty.lower())
@@ -45,6 +45,7 @@ class QuizManager:
         return True
                     
     def attempt_quiz(self):
+        self.user_answers = []
         for i,q in enumerate(self.questions):
             st.markdown(f"**Question {i+1}: {q['question']}**")
             
@@ -53,12 +54,12 @@ class QuizManager:
                     f"Select an option:{i+1}", 
                     q['options'],
                     key=f"mcq_{i}")
+                self.user_answers.append(user_answer)
             else:
                 user_answer=st.text_input(
                     f"Fill in the blank for Question {i+1}:", 
                     key=f"fill_blank_{i}"
                 )
-                
                 self.user_answers.append(user_answer)
     
     def evaluate_quiz(self):

@@ -21,8 +21,9 @@ mcq_prompt_template = PromptTemplate(
 fill_blank_prompt_template = PromptTemplate(
     template=(
         "Generate a {difficulty} fill-in-the-blank question about {topic}.\n\n"
+        "IMPORTANT: The question MUST contain exactly five underscores in a row: _____\n\n"
         "Return ONLY a JSON object with these exact fields:\n"
-        "- 'question': A sentence with '_____' marking where the blank should be\n"
+        "- 'question': A sentence with '_____' (5 underscores) marking where the blank should be\n"
         "- 'answer': The correct word or phrase that belongs in the blank\n\n"
         "Example format:\n"
         '{{\n'
