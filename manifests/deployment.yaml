@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: study-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: study-app
+  template:
+    metadata:
+      labels:
+        app: study-app
+    spec:
+      containers:
+      - name: study-app
+        image: nasim/study-app:latest
+        ports:
+        - containerPort: 8501
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: groq-api-secret
+              key: GROQ_API_KEY
