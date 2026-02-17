@@ -38,3 +38,27 @@ fill_blank_prompt_template = PromptTemplate(
     ),
     input_variables=["topic", "difficulty"]
 )
+
+summarizer_prompt_template = PromptTemplate(
+    template=(
+        "Analyze the following content and provide a concise summary.\n\n"
+        "Content: {topic}\n\n"
+        "Return ONLY a JSON object with these exact fields:\n"
+        "- 'main_idea': The core message of the text\n"
+        "- 'key_points': A list of the most important takeaways\n\n"
+        "Your response:"
+    ),
+    input_variables=["topic"]
+)
+
+flashcard_prompt_template = PromptTemplate(
+    template=(
+        "Create {num_cards} study flashcards from the following content.\n\n"
+        "Content: {topic}\n\n"
+        "Return ONLY a JSON object with a 'flashcards' field containing an array of objects. Each object MUST have:\n"
+        "- 'front': A question or concept\n"
+        "- 'back': The corresponding answer or explanation\n\n"
+        "Your response:"
+    ),
+    input_variables=["topic", "num_cards"]
+)

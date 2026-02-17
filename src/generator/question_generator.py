@@ -1,6 +1,13 @@
 from src.models.question_schemas import MCQQuestion, FillBlankQuestion
+from src.models.summary_schema import SummarySchema
+from src.models.flashcard_schema import FlashcardSet
 from src.llm.groq_client import get_groq_llm
-from src.prompts.templates import mcq_prompt_template, fill_blank_prompt_template
+from src.prompts.templates import (
+    mcq_prompt_template, 
+    fill_blank_prompt_template,
+    summarizer_prompt_template,
+    flashcard_prompt_template
+)
 from src.config.setting import settings
 from src.common.logger import get_logger
 from src.common.custom_exception import CustomException
@@ -14,6 +21,8 @@ class QuestionGenerator:
         # Structured LLMs
         self.mcq_llm = self.llm.with_structured_output(MCQQuestion)
         self.fill_blank_llm = self.llm.with_structured_output(FillBlankQuestion)
+        self.summary_llm = self.llm.with_structured_output(SummarySchema)
+        self.flashcard_llm = self.llm.with_structured_output(FlashcardSet)
 
     def _retry_and_generate(self, structured_llm, prompt_template, topic, difficulty):
         for attempt in range(settings.MAX_RETRIES):
@@ -63,3 +72,25 @@ class QuestionGenerator:
                 self.logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
                 
         raise CustomException("Error generating Fill-in-the-Blank question", None)
+
+    def generate_summary(self, topic: str) -> SummarySchema:
+        try:
+            self.logger.info(f"Generating summary for content...")
+            prompt = summarizer_prompt_template.format(topic=topic)
+            summary = self.summary_llm.invoke(prompt)
+            self.logger.info("Generated summary successfully")
+            return summary
+        except Exception as e:
+            self.logger.error(f"Error generating summary: {str(e)}")
+            raise CustomException("Error generating summary", e)
+
+    def generate_flashcards(self, topic: str, num_cards: int = 5) -> FlashcardSet:
+        try:
+            self.logger.info(f"Generating {num_cards} flashcards...")
+            prompt = flashcard_prompt_template.format(topic=topic, num_cards=num_cards)
+            flashcards = self.flashcard_llm.invoke(prompt)
+            self.logger.info("Generated flashcards successfully")
+            return flashcards
+        except Exception as e:
+            self.logger.error(f"Error generating flashcards: {str(e)}")
+            raise CustomException("Error generating flashcards", e)

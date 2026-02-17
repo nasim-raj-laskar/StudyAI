@@ -30,6 +30,8 @@ class QuizManager:
         self.questions=[]
         self.user_answers=[]
         self.results=[]
+        self.summary = None
+        self.flashcards = []
         
     def generate_questions(self,generator:QuestionGenerator,topic:str,question_type:str,difficulty:str,num_questions:int, progress_callback=None):
         self.questions=[]
@@ -66,6 +68,23 @@ class QuizManager:
             return False
         
         return True
+
+    def generate_summary(self, generator: QuestionGenerator, topic: str):
+        try:
+            self.summary = generator.generate_summary(topic)
+            return True
+        except Exception as e:
+            st.error(f"Error generating summary: {e}")
+            return False
+
+    def generate_flashcards(self, generator: QuestionGenerator, topic: str, num_cards: int):
+        try:
+            flashcard_set = generator.generate_flashcards(topic, num_cards)
+            self.flashcards = flashcard_set.flashcards
+            return True
+        except Exception as e:
+            st.error(f"Error generating flashcards: {e}")
+            return False
                     
     def attempt_quiz(self):
         self.user_answers = []
