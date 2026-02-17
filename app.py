@@ -7,7 +7,6 @@ load_dotenv()
 
 def main():
     st.set_page_config(
-        page_title="StudyBuddyAI",
         page_icon=":books:",
         layout="wide"
     )
@@ -44,7 +43,7 @@ def main():
     if 'rerun_trigger' not in st.session_state:
         st.session_state.rerun_trigger = False
         
-    st.title("StudyBuddyAI 📚")
+    st.title("Study-AI 📚")
     
     st.sidebar.header("Quiz Settings")
     
@@ -78,8 +77,13 @@ def main():
     elif content_source == "PDF Upload":
         pdf_file = st.sidebar.file_uploader("Upload PDF", type=["pdf"])
         if pdf_file:
-            source_content = extract_text_from_pdf(pdf_file)
-            st.sidebar.success("PDF Content Extracted!")
+            extracted_text = extract_text_from_pdf(pdf_file)
+            if extracted_text.startswith("Error"):
+                st.sidebar.error(extracted_text)
+                source_content = ""
+            else:
+                source_content = extracted_text
+                st.sidebar.success("PDF Content Extracted!")
 
     if st.sidebar.button("Generate Quiz"):
         if not source_content:

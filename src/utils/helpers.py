@@ -3,13 +3,23 @@ import streamlit as st
 import pandas as pd
 from src.generator.question_generator import QuestionGenerator
 
-def extract_text_from_pdf(file):
+try:
     import PyPDF2
-    pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
+except ImportError:
+    PyPDF2 = None
+
+def extract_text_from_pdf(file):
+    if PyPDF2 is None:
+        return "Error: PyPDF2 library not found. Please install it using 'pip install PyPDF2'."
+    
+    try:
+        pdf_reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+        return text
+    except Exception as e:
+        return f"Error extracting text from PDF: {str(e)}"
 
 def rerun():
     st.session_state['rerun_trigger']=not st.session_state.get('rerun_trigger', False)
