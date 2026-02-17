@@ -3,6 +3,14 @@ import streamlit as st
 import pandas as pd
 from src.generator.question_generator import QuestionGenerator
 
+def extract_text_from_pdf(file):
+    import PyPDF2
+    pdf_reader = PyPDF2.PdfReader(file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+
 def rerun():
     st.session_state['rerun_trigger']=not st.session_state.get('rerun_trigger', False)
     
@@ -13,13 +21,13 @@ class QuizManager:
         self.user_answers=[]
         self.results=[]
         
-    def generate_questions(self,generator:QuestionGenerator,topic:str,question_type:str,difficulty:str,num_questions:int):
+    def generate_questions(self,generator:QuestionGenerator,topic:str,question_type:str,difficulty:str,num_questions:int, progress_callback=None):
         self.questions=[]
         self.user_answers=[]
         self.results=[]
         
         try:
-            for _ in range(num_questions):
+            for i in range(num_questions):
                 if question_type=="Multiple Choice":
                     question=generator.generate_mcq(topic, difficulty.lower())
                     
@@ -27,7 +35,8 @@ class QuizManager:
                         'type':'MCQ',
                         'question':question.question,
                         'options':question.options,
-                        'correct_answer':question.correct_answer
+                        'correct_answer':question.correct_answer,
+                        'explanation':question.explanation
                     })
                 else:
                     question=generator.generate_fill_blank(topic, difficulty.lower())
@@ -35,8 +44,12 @@ class QuizManager:
                     self.questions.append({
                         'type':'Fill in the Blank',
                         'question':question.question,
-                        'correct_answer':question.answer
+                        'correct_answer':question.answer,
+                        'explanation':question.explanation
                     })
+                
+                if progress_callback:
+                    progress_callback((i + 1) / num_questions)
                     
         except Exception as e:
             st.error(f"Error generating questions: {e}")
@@ -51,9 +64,10 @@ class QuizManager:
             
             if q['type']=='MCQ':
                 user_answer=st.radio(
-                    f"Select an option:{i+1}", 
+                    f"Select an option:", 
                     q['options'],
-                    key=f"mcq_{i}")
+                    key=f"mcq_{i}",
+                    index=None)
                 self.user_answers.append(user_answer)
             else:
                 user_answer=st.text_input(
@@ -75,12 +89,13 @@ class QuizManager:
                 'is_correct':False
             }     
             if q['type']=='MCQ':
-                result_dict['correct_answer']=q['options']
+                result_dict['options']=q['options']
                 result_dict['is_correct']=user_answer==q['correct_answer']
             else:
                 result_dict['options']=[]
                 result_dict['is_correct']=user_answer.strip().lower()==q['correct_answer'].strip().lower()
                 
+            result_dict['explanation']=q.get('explanation', "No explanation provided.")
                 
             self.results.append(result_dict)
             

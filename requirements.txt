@@ -4,3 +4,4 @@ pandas
 streamlit
 python-dotenv
 setuptools
+PyPDF2

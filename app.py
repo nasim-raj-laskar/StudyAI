@@ -32,14 +32,6 @@ def main():
         ["Multiple Choice", "Fill in the Blank"],
         index=0                                        #by default select Multiple Choice
     )
-    topic = st.sidebar.text_input("Enter Topic", placeholder="e.g., Python Programming")
-    
-    difficulty = st.sidebar.selectbox(
-        "Select Difficulty Level",
-        ["Easy", "Medium", "Hard"],
-        index=1                                     #by default select Medium
-    )
-    
     num_questions = st.sidebar.slider(
         "Number of Questions",
         min_value=1,
@@ -47,21 +39,62 @@ def main():
         value=5                                              #default 5 questions
     )
     
+    difficulty = st.sidebar.selectbox(
+        "Select Difficulty Level",
+        ["Easy", "Medium", "Hard"],
+        index=1                                     #by default select Medium
+    )
+    
+    st.sidebar.markdown("---")
+    content_source = st.sidebar.radio("Content Source", ["Topic", "Text Paste", "PDF Upload"])
+    
+    source_content = ""
+    if content_source == "Topic":
+        topic = st.sidebar.text_input("Enter Topic", placeholder="e.g., Python Programming")
+        source_content = topic
+    elif content_source == "Text Paste":
+        source_content = st.sidebar.text_area("Paste Text Content", height=200)
+    elif content_source == "PDF Upload":
+        pdf_file = st.sidebar.file_uploader("Upload PDF", type=["pdf"])
+        if pdf_file:
+            source_content = extract_text_from_pdf(pdf_file)
+            st.sidebar.success("PDF Content Extracted!")
+
     if st.sidebar.button("Generate Quiz"):
-        st.session_state.quiz_submitted = False
+        if not source_content:
+            st.sidebar.error("Please provide content source!")
+        else:
+            st.session_state.quiz_submitted = False
+            
+            with st.status("Generating your quiz...", expanded=True) as status:
+                st.write("Initializing AI generator...")
+                generator = QuestionGenerator()
+                
+                st.write(f"Creating {num_questions} questions for your content...")
+                progress_bar = st.progress(0)
+                
+                # We need to modify generate_questions to support progress callbacks or just do it here
+                # For simplicity, if we want a real progress bar, we might need to change helpers.py
+                # But let's at least show the status.
+                
+                success = st.session_state.quiz_manager.generate_questions(
+                    generator,
+                    source_content[:2000],
+                    question_type,
+                    difficulty,
+                    num_questions,
+                    progress_callback=lambda p: progress_bar.progress(p)
+                )
+                
+                if success:
+                    status.update(label="Quiz generated successfully!", state="complete", expanded=False)
+                else:
+                    status.update(label="Failed to generate quiz.", state="error")
+                    
+            st.session_state.quiz_generated = success 
+            rerun()
         
-        generator = QuestionGenerator()
-        success = st.session_state.quiz_manager.generate_questions(
-            generator,
-            topic,
-            question_type,
-            difficulty,
-            num_questions
-        )
-        st.session_state.quiz_generated = success 
-        rerun()
-        
-    if st.session_state.quiz_generated and st.session_state.quiz_manager.questions:
+    if st.session_state.quiz_generated and st.session_state.quiz_manager.questions and not st.session_state.quiz_submitted:
         st.header("Quiz") 
         st.session_state.quiz_manager.attempt_quiz()
         
@@ -89,6 +122,8 @@ def main():
                     st.error(f"Question {question_num}: {result['question']}")
                     st.write(f"Your Answer: {result['user_answer']}")
                     st.write(f"Correct Answer: {result['correct_answer']}")
+                
+                st.info(f"**Explanation:** {result['explanation']}")
                     
                 st.markdown("-----------")
                 
