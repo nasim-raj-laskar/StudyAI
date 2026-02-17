@@ -8,8 +8,29 @@ load_dotenv()
 def main():
     st.set_page_config(
         page_title="StudyBuddyAI",
-        page_icon=":books:"
+        page_icon=":books:",
+        layout="wide"
     )
+    
+    # Custom CSS for Premium Look
+    st.markdown("""
+    <style>
+        .main {
+            background-color: #f8f9fa;
+        }
+        .stButton>button {
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .result-card {
+            padding: 20px;
+            border-radius: 15px;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
     if 'quiz_manager' not in st.session_state:
         st.session_state.quiz_manager = QuizManager()
@@ -104,7 +125,7 @@ def main():
             rerun()
     
     if st.session_state.quiz_submitted:
-        st.header("Quiz Results")
+        st.header("Quiz Results 📊")
         results_df=st.session_state.quiz_manager.get_results_dataframe()
         
         if not results_df.empty:
@@ -112,20 +133,42 @@ def main():
             total_questions=len(results_df)
             score_percentage=(correct_count/total_questions)*100
             
-            st.write(f"Score: {correct_count} out of {total_questions} ({score_percentage:.2f}%)")
+            # Premium Score Metrics
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Correct Answers", f"{correct_count}/{total_questions}")
+            col2.metric("Score Percentage", f"{score_percentage:.1f}%")
+            col3.metric("Status", "Passed ✅" if score_percentage >= 50 else "Keep Studying! 📚")
+
+            # Performance Chart
+            st.write("### Performance Breakdown")
+            chart_data = pd.DataFrame({
+                "Result": ["Correct", "Incorrect"],
+                "Count": [correct_count, total_questions - correct_count]
+            })
+            st.bar_chart(chart_data, x="Result", y="Count", color="#4CAF50")
+
+            if score_percentage == 100:
+                st.balloons()
+                st.success("Perfect Score! You're a Genius! 🌟")
             
+            st.markdown("---")
+            
+            # Result List with Expanders
             for _, result in results_df.iterrows():
                 question_num=result['question_number']
-                if result['is_correct']:
-                    st.success(f"Question {question_num}: {result['question']}")
-                else:
-                    st.error(f"Question {question_num}: {result['question']}")
-                    st.write(f"Your Answer: {result['user_answer']}")
-                    st.write(f"Correct Answer: {result['correct_answer']}")
                 
-                st.info(f"**Explanation:** {result['explanation']}")
+                with st.container():
+                    if result['is_correct']:
+                        st.markdown(f"**Question {question_num}**: {result['question']} ✅")
+                    else:
+                        st.markdown(f"**Question {question_num}**: {result['question']} ❌")
+                        st.write(f"Your Answer: `{result['user_answer']}`")
+                        st.write(f"Correct Answer: `{result['correct_answer']}`")
                     
-                st.markdown("-----------")
+                    with st.expander("Show AI Explanation"):
+                        st.info(result['explanation'])
+                    
+                st.markdown("---")
                 
             if st.button("Save Results"):
                 saved_file=st.session_state.quiz_manager.save_to_csv()
