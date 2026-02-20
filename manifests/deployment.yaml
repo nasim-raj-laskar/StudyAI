@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: study-app
-        image: nasim/study-app:latest
+        image: 743002303623.dkr.ecr.ap-south-1.amazonaws.com/study-ai:latest
         ports:
         - containerPort: 8501
         resources:
