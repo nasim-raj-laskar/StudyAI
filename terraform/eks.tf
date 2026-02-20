@@ -14,8 +14,8 @@ module "eks" {
       max_size     = 3
       desired_size = 2
 
-      instance_types = ["t3.medium"] # Smallest reliable for EKS; use t3.small/micro if very low traffic
-      capacity_type  = "SPOT"        # Better for cost-saving in dev/test
+      instance_types = ["t3.micro"] # Smallest Free Tier eligible instance in ap-south-1
+      capacity_type  = "SPOT"        # Better for cost-saving
     }
   }
 

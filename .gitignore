@@ -8,3 +8,14 @@ logs/
 results/
 q-dev-chat-2026-01-29.md
 credentials.txt
+.agent/
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+*.tfvars.json
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*

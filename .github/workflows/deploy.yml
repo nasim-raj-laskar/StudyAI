@@ -7,9 +7,9 @@ on:
     branches: [ "main" ]
 
 env:
-  AWS_REGION: ap-south-1                   # set this to your preferred region
-  ECR_REPOSITORY: study-ai                # set this to your repository name
-  EKS_CLUSTER_NAME: study-cluster         # set this to your cluster name
+  AWS_REGION: ap-south-1              
+  ECR_REPOSITORY: study-ai              
+  EKS_CLUSTER_NAME: study-cluster   
 
 jobs:
   build-and-test:
