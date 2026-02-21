@@ -23,5 +23,6 @@ module "eks" {
   # To add the current caller identity as an administrator
   enable_cluster_creator_admin_permissions = true
 
+
   tags = local.tags
 }
