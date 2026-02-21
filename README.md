@@ -65,19 +65,19 @@ sequenceDiagram
 
     Dev->>GHA: Git Push (main branch)
 
-    rect rgb(255, 255, 255)
+    rect
         Note right of GHA: Pipeline Stage: Build & Unit Test
         GHA->>GHA: Pytest / Flake8 Validation
     end
 
-    rect rgb(255, 255, 255)
+    rect
         Note right of GHA: Pipeline Stage: Containerization
         GHA->>ECR: Docker Login
         GHA->>GHA: Docker Build (multistage)
         GHA->>ECR: Push Image (SHA tag + latest)
     end
 
-    rect rgb(255, 255, 255)
+    rect
         Note right of GHA: Pipeline Stage: K8s Orchestration
         GHA->>EKS: Update Kubeconfig
         GHA->>EKS: patch image deployment/study-app
