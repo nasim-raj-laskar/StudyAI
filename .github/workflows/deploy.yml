@@ -7,27 +7,27 @@ on:
     branches: [ "main" ]
 
 env:
-  AWS_REGION: ap-south-1              
-  ECR_REPOSITORY: study-ai              
-  EKS_CLUSTER_NAME: study-cluster   
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: study-ai
+  EKS_CLUSTER_NAME: study-cluster
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest flake8
-        
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -43,6 +43,8 @@ jobs:
     needs: build-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
     steps:
     - uses: actions/checkout@v4
 
@@ -58,13 +60,17 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
+      id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+        docker build \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   deploy-to-eks:
     needs: build-and-push-image
@@ -83,6 +89,12 @@ jobs:
       run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
     - name: Deploy to EKS
+      env:
+        IMAGE: ${{ needs.build-and-push-image.outputs.image }}
       run: |
+        # Force the exact SHA-tagged image so every deploy is unambiguous
+        kubectl set image deployment/study-app study-app=$IMAGE
+        # Apply any manifest changes (replicas, probes, service, etc.)
         kubectl apply -f manifests/
-        kubectl rollout status deployment/study-app
+        # Wait up to 5 minutes; fail fast with a clear message if pods don't come up
+        kubectl rollout status deployment/study-app --timeout=5m
