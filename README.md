@@ -11,45 +11,21 @@ StudyAI is a cloud-native platform engineered to automate the ingestion and synt
 The infrastructure is provisioned as Immutable Infrastructure via Terraform, deployed within a highly available VPC architecture in the `ap-south-1` region.
 
 ```mermaid
-graph TD
-    %% Define Nodes
-    User([External User])
-    IGW[Internet Gateway]
-    ALB[Application Load Balancer]
-    NAT[NAT Gateway]
+graph LR
+    User([User])
 
-    subgraph VPC [AWS VPC: 10.0.0.0/16]
-        subgraph PublicSubnets [Public Subnets]
-            ALB
-            IGW
-        end
-
-        subgraph PrivateSubnets [Private Subnets]
-            NAT
-            subgraph EKS [EKS Cluster: study-cluster]
-                direction TB
-                subgraph NodeGroup [Managed Node Group: SPOT]
-                    Node1[t3.micro Node]
-                    Node2[t3.micro Node]
-
-                    subgraph K8sPods [Kubernetes Pods]
-                        Pod1[study-app Deployment]
-                        Pod2[study-app Deployment]
-                    end
-                end
-            end
-        end
-
+    subgraph AWS["AWS Cloud"]
+        ALB[Application Load Balancer]
+        EKS[EKS Cluster]
         ECR[(Amazon ECR)]
     end
 
-    %% Define Flows
-    User --> IGW
-    IGW --> ALB
-    ALB --> Pod1
-    ALB --> Pod2
-    Pod1 & Pod2 -- Egress via NAT --> GroqAPI[[Groq Cloud API]]
-    ECR -- Image Pull --> NodeGroup
+    Groq[[Groq Cloud API]]
+
+    User --> ALB
+    ALB --> EKS
+    EKS --> Groq
+    ECR --> EKS
 ```
 
 ### CI/CD Pipeline Logic
@@ -65,24 +41,18 @@ sequenceDiagram
 
     Dev->>GHA: Git Push (main branch)
 
-    rect
-        Note right of GHA: Pipeline Stage: Build & Unit Test
-        GHA->>GHA: Pytest / Flake8 Validation
-    end
+    Note over GHA: Pipeline Stage: Build & Unit Test
+    GHA->>GHA: Pytest / Flake8 Validation
 
-    rect
-        Note right of GHA: Pipeline Stage: Containerization
-        GHA->>ECR: Docker Login
-        GHA->>GHA: Docker Build (multistage)
-        GHA->>ECR: Push Image (SHA tag + latest)
-    end
+    Note over GHA: Pipeline Stage: Containerization
+    GHA->>ECR: Docker Login
+    GHA->>GHA: Docker Build (multistage)
+    GHA->>ECR: Push Image (SHA tag + latest)
 
-    rect
-        Note right of GHA: Pipeline Stage: K8s Orchestration
-        GHA->>EKS: Update Kubeconfig
-        GHA->>EKS: patch image deployment/study-app
-        GHA->>EKS: rollout status --timeout=5m
-    end
+    Note over GHA: Pipeline Stage: K8s Orchestration
+    GHA->>EKS: Update Kubeconfig
+    GHA->>EKS: patch image deployment/study-app
+    GHA->>EKS: rollout status --timeout=5m
 
     EKS-->>Dev: Cluster State Updated
 ```
