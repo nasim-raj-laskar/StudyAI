@@ -1,6 +1,6 @@
 StudyBuddyAI.egg-info/
 .env
-venv/
+.venv/
 *__pycache__/
 logs/
 *.pyc
