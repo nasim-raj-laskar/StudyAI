@@ -1,4 +1,4 @@
-# StudyAI: GenAI-Powered Educational Infrastructure 📚
+# StudyAI: Cloud-Native GenAI Pipeline
 
 StudyAI is a cloud-native platform engineered to automate the ingestion and synthesis of educational content. Built on a modular architecture, the system utilizes Large Language Models (LLMs) to perform content summarization, flashcard extraction, and dynamic evaluation generation.
 
